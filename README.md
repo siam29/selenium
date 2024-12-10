@@ -33,3 +33,22 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
+## Output
+```test_results1.xlsx``` – Contains test case results. It contain 2 sheet ```Test Results``` and ```Scraped Data```.
+```Test Results``` look like this 
+```
+| page_url         | testcase                    | status | comments                         |
+|------------------|-----------------------------|--------|----------------------------------|
+| https://...      | Test HTML Elements          | pass   | All elements found               |
+| https://...      | Currency Change to USD      | pass   | Updated prices: $100, $200       |
+```
+```Scraped Data``` – Contains scraped data:
+```
+| SiteURL          | CampaignID | SiteName      | Browser | CountryCode | IP           |
+|------------------|------------|---------------|---------|-------------|--------------|
+| https://...      | 12345      | Example Site  | Chrome  | US          | 192.168.0.1  |
+```
+## Connect with Me
+If you have any questions, suggestions, or feedback, feel free to reach out to me through the following channels
+- Email: almahmudsiam15@gmail.com
+- GitHub: https://github.com/siam29
