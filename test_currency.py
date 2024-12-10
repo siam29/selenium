@@ -1,82 +1,91 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait as wev
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException
+import time
 
 def test_currency_filter(driver, page_url):
+    results = []
     driver.get(page_url)
+
     try:
-        # Wait until the body is fully loaded
-        WebDriverWait(driver, 20).until(
-            lambda driver: driver.find_element(By.TAG_NAME, "body")
+        # Wait for the price elements to load
+        wev(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "js-price-value"))
         )
 
-        # Debug: print page source to check if the elements are present
-        print(driver.page_source)
+        # Attempt to locate the currency dropdown menu
+        try:
+            currency_menu = wev(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "js-currency-sort-footer"))
+            )
+        except TimeoutException:
+            currency_menu = driver.find_element(By.CSS_SELECTOR, "#js-currency-sort-footer")
 
-        # Wait for the initial price element to be visible
-        initial_price_element = WebDriverWait(driver, 20).until(
-            EC.visibility_of_element_located((By.CLASS_NAME, "property-tile-price"))
-        )
-        initial_price = initial_price_element.text
-        print(f"Initial Price: {initial_price}")
+        # Scroll to the dropdown and ensure it's in view
+        driver.execute_script("arguments[0].scrollIntoView(true);", currency_menu)
+        time.sleep(5)
 
-        # Find and click the currency filter
-        currency_filter = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.ID, "currency-selector"))
-        )
-        currency_filter.click()
-        print("Currency selector clicked.")
+        # Click the dropdown using JavaScript or fallback to ActionChains
+        try:
+            driver.execute_script("arguments[0].click();", currency_menu)
+        except Exception:
+            ActionChains(driver).move_to_element(currency_menu).click().perform()
 
-        # Wait for the USD option and select it
-        usd_option = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.XPATH, "//option[text()='USD']"))
-        )
-        usd_option.click()
-        print("USD option selected.")
+        time.sleep(5)
 
-        # Wait for the price to update
-        updated_price_element = WebDriverWait(driver, 20).until(
-            EC.visibility_of_element_located((By.CLASS_NAME, "property-tile-price"))
-        )
-        updated_price = updated_price_element.text
-        print(f"Updated Price: {updated_price}")
+        # Collect all available currency options
+        currency_list = driver.find_elements(By.CSS_SELECTOR, "#js-currency-sort-footer .select-ul li")
+        print(f"Total currency options found: {len(currency_list)}")
 
-        if initial_price != updated_price:
-            return {
-                "page_url": page_url,
-                "testcase": "Currency filter",
-                "status": "pass",
-                "comments": f"Currency filter is working. Price changed from {initial_price} to {updated_price}"
-            }
-        else:
-            return {
-                "page_url": page_url,
-                "testcase": "Currency filter",
-                "status": "fail",
-                "comments": f"Currency did not change. Price remains {initial_price}"
-            }
+        for option in currency_list:
+            try:
+                # Retrieve the currency code and symbol
+                currency_code = option.get_attribute("data-currency-country") or "Unknown"
+                currency_symbol = option.find_element(By.TAG_NAME, "p").text.strip()
 
-    except TimeoutException as e:
-        return {
+                # Select the currency option
+                driver.execute_script("arguments[0].click();", option)
+
+                # Wait until the price values reflect the selected currency
+                wev(driver, 10).until(
+                    EC.text_to_be_present_in_element((By.CLASS_NAME, "js-price-value"), currency_symbol)
+                )
+
+                # Gather the updated price values
+                price_elements = driver.find_elements(By.CLASS_NAME, "js-price-value")
+                updated_prices = [element.text for element in price_elements]
+
+                # Verify all prices display the correct currency symbol
+                test_success = all(currency_symbol in price for price in updated_prices)
+
+                results.append({
+                    "page_url": page_url,
+                    "testcase": f"Currency Change to {currency_code}",
+                    "status": "pass" if test_success else "fail",
+                    "comments": f"Prices displayed: {updated_prices}"
+                })
+
+                # Reopen the currency dropdown for the next iteration
+                driver.execute_script("arguments[0].click();", currency_menu)
+                time.sleep(5)
+
+            except Exception as error:
+                results.append({
+                    "page_url": page_url,
+                    "testcase": f"Currency Test for {currency_code}",
+                    "status": "fail",
+                    "comments": f"Error encountered: {str(error)}"
+                })
+
+    except Exception as critical_error:
+        print(f"An error occurred during the currency test: {str(critical_error)}")
+        results.append({
             "page_url": page_url,
-            "testcase": "Currency filter",
+            "testcase": "Currency Test",
             "status": "fail",
-            "comments": f"Timeout waiting for element: {str(e)}"
-        }
+            "comments": f"Critical error: {str(critical_error)}"
+        })
 
-    except NoSuchElementException as e:
-        return {
-            "page_url": page_url,
-            "testcase": "Currency filter",
-            "status": "fail",
-            "comments": f"Element not found: {str(e)}"
-        }
-
-    except Exception as e:
-        return {
-            "page_url": page_url,
-            "testcase": "Currency filter",
-            "status": "fail",
-            "comments": f"Error occurred: {str(e)}"
-        }
+    return results

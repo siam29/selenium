@@ -13,20 +13,16 @@ def setup_driver():
     return driver
 
 # Scrape data from the website
-def scrape_data():
-    # Initialize the driver
-    driver = setup_driver()
+# scraped_data.py
 
-    # Visit the site
-    url = "https://www.alojamiento.io/"
+def scrape_data(driver, url):
     driver.get(url)
-    time.sleep(5)  # Allow time for page to load
+    time.sleep(5)
 
-    # Retrieve ScriptData from the window object using JavaScript
     try:
         script_data = driver.execute_script("return window.ScriptData")
         if script_data:
-            # Extract required values from script_data
+            # Extract data
             site_url = script_data['config']['SiteUrl']
             site_name = script_data['config']['SiteName']
             campaign_id = script_data['pageData'].get('CampaignId', 'Not found')
@@ -47,17 +43,10 @@ def scrape_data():
 
             # Create DataFrame
             df = pd.DataFrame(data)
-
-            # Save to Excel
-            df.to_excel('scraped_data.xlsx', index=False)
-            print("Data saved to 'scraped_data.xlsx'")
+            return df  # Ensure this returns the DataFrame
         else:
             print("Script data is not available!")
+            return pd.DataFrame()  # Return an empty DataFrame in case of no data
     except Exception as e:
         print(f"Error occurred: {e}")
-
-    # Close the driver
-    driver.quit()
-
-# Run the scraping function
-scrape_data()
+        return pd.DataFrame()
