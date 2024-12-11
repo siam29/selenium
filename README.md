@@ -22,7 +22,7 @@ This project automates the testing of a vacation rental details page on the webs
 git clone https://github.com/siam29/selenium.git
 ```
 ```
-cd cd selenium
+cd selenium
 ```
 ```
 python3 -m venv myenv
