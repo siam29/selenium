@@ -17,22 +17,33 @@ This project automates the testing of a vacation rental details page on the webs
 - **Web Browser**: Google Chrome or Firefox with the respective WebDriver.
 - **Test Site**: [https://www.alojamiento.io/](https://www.alojamiento.io/)
 
-## Setup this project
+**Clone the Repository**
 ```
 git clone https://github.com/siam29/selenium.git
 ```
+**Navigate to the Project Directory**
 ```
 cd selenium
 ```
+**Create a Virtual Environment**
 ```
 python3 -m venv myenv
 ```
+
+**Activate the Virtual Environment**
+- On Mac/Linux
 ```
 source myenv/bin/activate
 ```
+- On Windows
+```
+myenv\Scripts\activate
+```
+**Install Require Dependencies**
 ```
 pip install -r requirements.txt
 ```
+**Run the Project**
 ```
 python main.py
 ```
